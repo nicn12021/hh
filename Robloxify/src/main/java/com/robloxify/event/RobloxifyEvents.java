@@ -13,6 +13,7 @@ import com.robloxify.sound.RobloxifySounds;
 import com.robloxify.world.RobloxifyBlocks;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -81,6 +82,8 @@ public final class RobloxifyEvents {
 			player.level().playSound(null, player.blockPosition(), RobloxifySounds.OOF, SoundSource.PLAYERS, 1.0F, 1.0F);
 			player.sendSystemMessage(Component.literal("oof").withStyle(ChatFormatting.DARK_GRAY));
 		});
+
+		ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> ExperienceManager.onRespawn(newPlayer));
 
 		// Everything Robloxify is available in Creative without any grinding.
 		CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(output -> {

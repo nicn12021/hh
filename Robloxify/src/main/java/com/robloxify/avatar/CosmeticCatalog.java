@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.robloxify.avatar.CosmeticCategory.ACCESSORY;
+import static com.robloxify.avatar.CosmeticCategory.BODY;
+import static com.robloxify.avatar.CosmeticCategory.HAIR;
 import static com.robloxify.avatar.CosmeticCategory.ANIMATION;
 import static com.robloxify.avatar.CosmeticCategory.EFFECT;
 import static com.robloxify.avatar.CosmeticCategory.FACE;
@@ -27,6 +29,20 @@ public final class CosmeticCatalog {
 	private static final Map<String, Cosmetic> BY_ID = new java.util.HashMap<>();
 
 	static {
+		// Skin tones and hair are free: identity should never be paywalled.
+		simple("warm", BODY, "Warm", 0, 0xFFE8B96B);
+		simple("light", BODY, "Light", 0, 0xFFF5D6B0);
+		simple("tan", BODY, "Tan", 0, 0xFFC68B54);
+		simple("deep", BODY, "Deep", 0, 0xFF8D5A32);
+		simple("ghost", BODY, "Ghost", 150, 0xFFD8E8F0);
+
+		simple("brown", HAIR, "Brown", 0, 0xFF4A3728);
+		simple("black", HAIR, "Black", 0, 0xFF1E1A18);
+		simple("blond", HAIR, "Blond", 0, 0xFFE8D07A);
+		simple("red", HAIR, "Red", 80, 0xFFB5451F);
+		simple("mint", HAIR, "Mint", 120, 0xFF6FD8B8);
+		simple("none", HAIR, "Bald", 0, 0x00000000);
+
 		// Faces are all free: expressions should never be paywalled.
 		face("neutral", "Neutral", 0xFF3A3A46);
 		face("happy", "Happy", 0xFF2B2B36);
@@ -75,6 +91,10 @@ public final class CosmeticCatalog {
 		ALL.add(cosmetic);
 		BY_CATEGORY.computeIfAbsent(cosmetic.category(), key -> new ArrayList<>()).add(cosmetic);
 		BY_ID.put(cosmetic.id(), cosmetic);
+	}
+
+	private static void simple(String id, CosmeticCategory category, String name, int price, int color) {
+		add(new Cosmetic(id, category, name, price, color, 0, Cosmetic.Pattern.SOLID, id));
 	}
 
 	private static void face(String id, String name, int ink) {

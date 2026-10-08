@@ -1,6 +1,5 @@
 package com.robloxify.mixin;
 
-import com.robloxify.Robloxify;
 import com.robloxify.avatar.AvatarAppearance;
 import com.robloxify.client.ClientRobloxState;
 import com.robloxify.client.avatar.AvatarSkinFactory;
@@ -16,9 +15,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /** Uses the Robloxify skin texture for players wearing the Roblox avatar. */
 @Mixin(AvatarRenderer.class)
 public abstract class AvatarRendererMixin {
-	@Unique
-	private static final Identifier ROBLOXIFY$FALLBACK = Robloxify.id("textures/entity/roblox_avatar.png");
-
 	@Inject(method = "getTextureLocation(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;)Lnet/minecraft/resources/Identifier;",
 			at = @At("HEAD"), cancellable = true)
 	private void robloxify$avatarTexture(AvatarRenderState state, CallbackInfoReturnable<Identifier> cir) {

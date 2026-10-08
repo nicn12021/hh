@@ -24,6 +24,11 @@ import java.util.function.Function;
 
 /** Every Robloxify block. All of them are placeable and available in Creative. */
 public final class RobloxifyBlocks {
+	private static final List<ResourceKey<Block>> BLOCK_KEYS = new ArrayList<>();
+	private static final List<Block> BLOCKS = new ArrayList<>();
+	private static final List<String> NAMES = new ArrayList<>();
+	private static final List<Item> ITEMS = new ArrayList<>();
+
 	public static final Block STUD = create("stud", Block::new, MapColor.COLOR_LIGHT_GRAY, SoundType.WOOD, 1.0F);
 	public static final Block CHECKPOINT = create("checkpoint", CheckpointBlock::new, MapColor.EMERALD, SoundType.METAL, 1.2F);
 	public static final Block BOUNCE_PAD = create("bounce_pad", BouncePadBlock::new, MapColor.DIAMOND, SoundType.SLIME_BLOCK, 1.0F);
@@ -31,11 +36,6 @@ public final class RobloxifyBlocks {
 	public static final Block SPAWN_PAD = create("spawn_pad", SpawnPadBlock::new, MapColor.QUARTZ, SoundType.METAL, 1.0F);
 	public static final Block DISAPPEARING_PLATFORM = create("disappearing_platform", DisappearingPlatformBlock::new,
 			MapColor.COLOR_MAGENTA, SoundType.GLASS, 0.6F);
-
-	private static final List<ResourceKey<Block>> BLOCK_KEYS = new ArrayList<>();
-	private static final List<Block> BLOCKS = new ArrayList<>();
-	private static final List<String> NAMES = new ArrayList<>();
-	private static final List<Item> ITEMS = new ArrayList<>();
 
 	private RobloxifyBlocks() {
 	}

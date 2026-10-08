@@ -49,13 +49,13 @@ public abstract class RobloxCatalogScreen extends RobloxScreen {
 		int x = CONTENT_X;
 		int width = contentWidth();
 		List<CosmeticCategory> categories = categories();
-		int tabWidth = (width - (categories.size() - 1) * 4) / categories.size();
+		int tabWidth = (width - (categories.size() - 1) * 3) / categories.size();
 
 		for (int i = 0; i < categories.size(); i++) {
 			CosmeticCategory category = categories.get(i);
 			boolean active = category == selected;
-			RobloxButton button = new RobloxButton(x + i * (tabWidth + 4), CONTENT_Y, tabWidth, 18,
-					Component.literal(category.label()), () -> {
+			RobloxButton button = new RobloxButton(x + i * (tabWidth + 3), CONTENT_Y, tabWidth, 18,
+					Component.literal(category.shortLabel()), () -> {
 					selected = category;
 					this.rebuildWidgets();
 				}).accent(active ? RobloxTheme.ACCENT : RobloxTheme.BORDER);

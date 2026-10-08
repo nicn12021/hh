@@ -17,6 +17,15 @@
       }
     ]
   },
+  "ui_hover": {
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event",
+        "pitch": 1.8
+      }
+    ]
+  },
   "purchase": {
     "sounds": [
       {
@@ -53,10 +62,64 @@
       }
     ]
   },
+  "experience_start": {
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.activate",
+        "type": "event",
+        "pitch": 1.2
+      }
+    ]
+  },
   "avatar_switch": {
     "sounds": [
       {
         "name": "minecraft:block.beacon.activate",
+        "type": "event",
+        "pitch": 0.9
+      }
+    ]
+  },
+  "avatar_equip": {
+    "sounds": [
+      {
+        "name": "minecraft:item.armor.equip_leather",
+        "type": "event",
+        "pitch": 1.0
+      }
+    ]
+  },
+  "level_up": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.levelup",
+        "type": "event",
+        "pitch": 1.4
+      }
+    ]
+  },
+  "respawn": {
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.deactivate",
+        "type": "event",
+        "pitch": 1.0
+      }
+    ]
+  },
+  "fail": {
+    "sounds": [
+      {
+        "name": "minecraft:block.note_block.bass",
+        "type": "event",
+        "pitch": 0.6
+      }
+    ]
+  },
+  "bounce": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.slime.jump",
         "type": "event",
         "pitch": 1.2
       }

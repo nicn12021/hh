@@ -4,7 +4,9 @@ import java.util.Objects;
 
 /** Which cosmetic is equipped in each slot. Plain fields so Gson can serialise it. */
 public final class AvatarAppearance {
+	public String body = "warm";
 	public String face = "neutral";
+	public String hair = "brown";
 	public String shirt = "classic_blue";
 	public String pants = "classic_green";
 	public String hat = CosmeticCatalog.NONE;
@@ -14,7 +16,9 @@ public final class AvatarAppearance {
 
 	public String slot(CosmeticCategory category) {
 		return switch (category) {
+			case BODY -> body;
 			case FACE -> face;
+			case HAIR -> hair;
 			case SHIRT -> shirt;
 			case PANTS -> pants;
 			case HAT -> hat;
@@ -26,7 +30,9 @@ public final class AvatarAppearance {
 
 	public void set(CosmeticCategory category, String id) {
 		switch (category) {
+			case BODY -> body = id;
 			case FACE -> face = id;
+			case HAIR -> hair = id;
 			case SHIRT -> shirt = id;
 			case PANTS -> pants = id;
 			case HAT -> hat = id;
@@ -43,12 +49,14 @@ public final class AvatarAppearance {
 
 	/** Stable cache key for the generated skin texture. */
 	public String key() {
-		return face + '|' + shirt + '|' + pants + '|' + hat + '|' + accessory;
+		return body + '|' + face + '|' + hair + '|' + shirt + '|' + pants + '|' + hat + '|' + accessory;
 	}
 
 	public AvatarAppearance copy() {
 		AvatarAppearance copy = new AvatarAppearance();
+		copy.body = body;
 		copy.face = face;
+		copy.hair = hair;
 		copy.shirt = shirt;
 		copy.pants = pants;
 		copy.hat = hat;
@@ -66,13 +74,13 @@ public final class AvatarAppearance {
 		if (!(other instanceof AvatarAppearance that)) {
 			return false;
 		}
-		return face.equals(that.face) && shirt.equals(that.shirt) && pants.equals(that.pants)
+		return body.equals(that.body) && face.equals(that.face) && hair.equals(that.hair) && shirt.equals(that.shirt) && pants.equals(that.pants)
 				&& hat.equals(that.hat) && accessory.equals(that.accessory)
 				&& effect.equals(that.effect) && animation.equals(that.animation);
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(face, shirt, pants, hat, accessory, effect, animation);
+		return Objects.hash(body, face, hair, shirt, pants, hat, accessory, effect, animation);
 	}
 }

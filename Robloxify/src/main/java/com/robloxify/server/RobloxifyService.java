@@ -196,13 +196,16 @@ public final class RobloxifyService {
 			notify(player, "info", "Already owned", cosmetic.name(), 0);
 			return;
 		}
-		if (profile.robux < cosmetic.price()) {
+		boolean free = player.isCreative();
+		if (!free && profile.robux < cosmetic.price()) {
 			play(player, RobloxifySounds.FAIL, 1.2F);
 			notify(player, "fail", "Not enough Robux",
 					cosmetic.name() + " costs " + com.robloxify.util.Robux.format(cosmetic.price()), 0);
 			return;
 		}
-		profile.robux -= cosmetic.price();
+		if (!free) {
+			profile.robux -= cosmetic.price();
+		}
 		profile.owned.add(cosmetic.id());
 		RobloxifyData.get().markDirty();
 		play(player, RobloxifySounds.PURCHASE);

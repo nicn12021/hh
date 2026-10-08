@@ -11,12 +11,22 @@ public final class Mover {
 	public final int periodTicks;
 	public int offset;
 	public int ticks;
+	private int step = 1;
 
 	public Mover(BlockPos start, Direction direction, int travel, int periodTicks) {
 		this.start = start;
 		this.direction = direction;
 		this.travel = travel;
 		this.periodTicks = periodTicks;
+	}
+
+	/** Reverses direction once the platform reaches the end of its track. */
+	public void periodTicksReversed() {
+		this.step = -this.step;
+	}
+
+	public int step() {
+		return step;
 	}
 
 	public BlockPos current() {

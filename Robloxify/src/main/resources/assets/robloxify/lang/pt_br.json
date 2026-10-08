@@ -1,10 +1,18 @@
 {
   "key.category.robloxify.main": "Robloxify",
-  "key.robloxify.menu": "Abrir Menu Robloxify",
+  "key.robloxify.menu": "Abrir Robloxify",
   "key.robloxify.avatar": "Alternar Avatar Roblox",
   "key.robloxify.wave": "Emote de Tchau",
   "block.robloxify.stud": "Stud",
   "item.robloxify.stud": "Stud",
-  "subtitles.robloxify.badge_unlock": "Badge desbloqueada",
-  "subtitles.robloxify.purchase": "Compra realizada"
+  "block.robloxify.checkpoint": "Pad de Checkpoint",
+  "item.robloxify.checkpoint": "Checkpoint Pad",
+  "block.robloxify.bounce_pad": "Pad de Impulso",
+  "item.robloxify.bounce_pad": "Bounce Pad",
+  "block.robloxify.finish_pad": "Pad de Chegada",
+  "item.robloxify.finish_pad": "Finish Pad",
+  "block.robloxify.spawn_pad": "Pad de Spawn",
+  "item.robloxify.spawn_pad": "Spawn Pad",
+  "block.robloxify.disappearing_platform": "Plataforma Desaparecida",
+  "item.robloxify.disappearing_platform": "Disappearing Platform"
 }

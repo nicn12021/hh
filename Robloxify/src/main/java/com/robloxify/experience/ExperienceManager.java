@@ -42,6 +42,7 @@ public final class ExperienceManager {
 
 	private static final Map<UUID, Session> SESSIONS = new HashMap<>();
 	private static final Map<BlockPos, Restore> VANISHING = new HashMap<>();
+	private static final Map<BlockPos, ServerLevel> ACTIVE_LEVELS = new HashMap<>();
 
 	private ExperienceManager() {
 	}
@@ -180,6 +181,7 @@ public final class ExperienceManager {
 		}
 		long now = System.currentTimeMillis();
 		VANISHING.put(pos, new Restore(state, now + 900L));
+		ACTIVE_LEVELS.put(pos, level);
 		level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
 	}
 
@@ -191,6 +193,27 @@ public final class ExperienceManager {
 		}
 		session.lastAction = System.currentTimeMillis();
 		RobloxifyService.notify(player, "fail", "You died!", "Resetting to " + session.type.displayName(), 0);
+	}
+
+	/**
+	 * Called after the player presses respawn. Inside an Experience they come back at the last
+	 * checkpoint instead of the world spawn, exactly like a Roblox obby.
+	 */
+	public static void onRespawn(ServerPlayer player) {
+		Session session = SESSIONS.get(player.getUUID());
+		if (session == null || session.completed) {
+			return;
+		}
+		BlockPos target = session.arena.spawn;
+		if (!session.arena.checkpoints.isEmpty() && session.next > 0) {
+			target = session.arena.checkpoints.get(Math.min(session.next - 1, session.arena.checkpoints.size() - 1));
+		}
+		player.teleportTo(target.getX() + 0.5, target.getY() + 1.0, target.getZ() + 0.5);
+		player.setDeltaMovement(0.0, 0.0, 0.0);
+		player.hurtMarked = true;
+		RobloxifyService.play(player, RobloxifySounds.RESPAWN);
+		RobloxifyService.notify(player, "checkpoint", "Respawned", "Back at your checkpoint", 0);
+		sendState(player, session);
 	}
 
 	// ------------------------------------------------------------------- tick
@@ -227,6 +250,10 @@ public final class ExperienceManager {
 				continue;
 			}
 
+			if (!session.arena.movers.isEmpty()) {
+				tickMovers(player, session);
+			}
+
 			switch (session.type) {
 				case OBBY, RACE -> {
 					if (session.type == ExperienceType.RACE
@@ -261,6 +288,50 @@ public final class ExperienceManager {
 				continue;
 			}
 			iterator.remove();
+			BlockPos pos = entry.getKey();
+			ACTIVE_LEVELS.remove(pos);
+			ServerLevel level = ACTIVE_LEVELS.get(pos);
+			if (level != null && level.getBlockState(pos).isAir()) {
+				level.setBlockAndUpdate(pos, entry.getValue().state());
+			}
+		}
+	}
+
+
+	/** Slides the obby's moving platforms and carries whoever is standing on them. */
+	private static void tickMovers(ServerPlayer player, Session session) {
+		for (Mover mover : session.arena.movers) {
+			mover.ticks++;
+			if (mover.ticks % mover.periodTicks != 0) {
+				continue;
+			}
+			BlockPos previous = mover.current();
+			paintPlatform(session.level, previous, Blocks.AIR.defaultBlockState());
+
+			mover.offset += mover.step();
+			if (mover.offset > mover.travel || mover.offset < 0) {
+				mover.periodTicksReversed();
+				mover.offset += mover.step() * 2;
+			}
+			BlockPos current = mover.current();
+			paintPlatform(session.level, current, Blocks.POLISHED_ANDESITE.defaultBlockState());
+
+			int dx = current.getX() - previous.getX();
+			int dz = current.getZ() - previous.getZ();
+			if ((dx != 0 || dz != 0) && player.onGround() && Math.abs(player.getY() - previous.getY()) < 2.0
+					&& Math.abs(player.getX() - (previous.getX() + 0.5)) < 2.0
+					&& Math.abs(player.getZ() - (previous.getZ() + 0.5)) < 2.0) {
+				player.teleportTo(player.getX() + dx, player.getY(), player.getZ() + dz);
+				player.hurtMarked = true;
+			}
+		}
+	}
+
+	private static void paintPlatform(ServerLevel level, BlockPos center, BlockState state) {
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				level.setBlockAndUpdate(center.offset(dx, 0, dz), state);
+			}
 		}
 	}
 
@@ -415,10 +486,5 @@ public final class ExperienceManager {
 		RobloxifyNetworking.sendTo(player, new RobloxifyPayloads.Experience(true, session.type.id(),
 				session.next, session.arena.total, System.currentTimeMillis() - session.startMillis,
 				false, session.objective.isEmpty() ? session.type.description() : session.objective));
-	}
-
-	/** Experience blocks that were broken get restored, so arenas stay usable. */
-	public static List<BlockPos> restoreList() {
-		return new ArrayList<>(VANISHING.keySet());
 	}
 }
