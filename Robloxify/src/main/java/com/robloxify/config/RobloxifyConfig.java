@@ -64,7 +64,10 @@ public final class RobloxifyConfig {
 	public synchronized void save() {
 		Path path = configPath();
 		try {
-			Files.createDirectories(path.getParent());
+			Path parent = path.toAbsolutePath().getParent();
+			if (parent != null) {
+				Files.createDirectories(parent);
+			}
 			Files.writeString(path, GSON.toJson(this), StandardCharsets.UTF_8);
 		} catch (IOException e) {
 			Robloxify.LOGGER.warn("Could not write config", e);

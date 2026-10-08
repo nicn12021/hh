@@ -1,0 +1,74 @@
+{
+  "ui_open": {
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event",
+        "pitch": 1.4
+      }
+    ]
+  },
+  "ui_close": {
+    "sounds": [
+      {
+        "name": "minecraft:ui.button.click",
+        "type": "event",
+        "pitch": 0.9
+      }
+    ]
+  },
+  "purchase": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.experience_orb.pickup",
+        "type": "event",
+        "pitch": 1.0
+      }
+    ]
+  },
+  "badge_unlock": {
+    "sounds": [
+      {
+        "name": "minecraft:ui.toast.challenge_complete",
+        "type": "event",
+        "pitch": 1.0
+      }
+    ]
+  },
+  "checkpoint": {
+    "sounds": [
+      {
+        "name": "minecraft:block.note_block.bell",
+        "type": "event",
+        "pitch": 1.0
+      }
+    ]
+  },
+  "experience_complete": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.player.levelup",
+        "type": "event",
+        "pitch": 1.0
+      }
+    ]
+  },
+  "avatar_switch": {
+    "sounds": [
+      {
+        "name": "minecraft:block.beacon.activate",
+        "type": "event",
+        "pitch": 1.2
+      }
+    ]
+  },
+  "oof": {
+    "sounds": [
+      {
+        "name": "minecraft:entity.villager.hurt",
+        "type": "event",
+        "pitch": 1.4
+      }
+    ]
+  }
+}

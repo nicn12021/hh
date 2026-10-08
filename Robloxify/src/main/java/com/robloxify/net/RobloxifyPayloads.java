@@ -1,5 +1,6 @@
 package com.robloxify.net;
 
+import com.robloxify.Robloxify;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -19,7 +20,7 @@ public final class RobloxifyPayloads {
 	public record Profile(int robux, int blocksMined, int blocksPlaced, boolean robloxAvatar,
 						  int obbiesCompleted, long obbyBestMillis, Map<String, Long> badges,
 						  List<String> owned) implements CustomPacketPayload {
-		public static final Type<Profile> TYPE = CustomPacketPayload.createType("robloxify:profile");
+		public static final Type<Profile> TYPE = new CustomPacketPayload.Type<>(Robloxify.id("profile"));
 		public static final StreamCodec<RegistryFriendlyByteBuf, Profile> CODEC =
 				CustomPacketPayload.codec(Profile::write, Profile::read);
 
@@ -69,7 +70,7 @@ public final class RobloxifyPayloads {
 
 	/** Broadcast when a player switches between the vanilla and Roblox look. */
 	public record Avatar(UUID player, boolean roblox) implements CustomPacketPayload {
-		public static final Type<Avatar> TYPE = CustomPacketPayload.createType("robloxify:avatar");
+		public static final Type<Avatar> TYPE = new CustomPacketPayload.Type<>(Robloxify.id("avatar"));
 		public static final StreamCodec<RegistryFriendlyByteBuf, Avatar> CODEC =
 				CustomPacketPayload.codec(Avatar::write, Avatar::read);
 
@@ -90,7 +91,7 @@ public final class RobloxifyPayloads {
 
 	/** Broadcast when a player plays an emote. */
 	public record Emote(UUID player, String emote) implements CustomPacketPayload {
-		public static final Type<Emote> TYPE = CustomPacketPayload.createType("robloxify:emote");
+		public static final Type<Emote> TYPE = new CustomPacketPayload.Type<>(Robloxify.id("emote"));
 		public static final StreamCodec<RegistryFriendlyByteBuf, Emote> CODEC =
 				CustomPacketPayload.codec(Emote::write, Emote::read);
 
@@ -111,7 +112,7 @@ public final class RobloxifyPayloads {
 
 	/** Sent when a badge is unlocked so the client can play a toast + sound. */
 	public record BadgeUnlocked(String badgeId, int robuxReward) implements CustomPacketPayload {
-		public static final Type<BadgeUnlocked> TYPE = CustomPacketPayload.createType("robloxify:badge");
+		public static final Type<BadgeUnlocked> TYPE = new CustomPacketPayload.Type<>(Robloxify.id("badge"));
 		public static final StreamCodec<RegistryFriendlyByteBuf, BadgeUnlocked> CODEC =
 				CustomPacketPayload.codec(BadgeUnlocked::write, BadgeUnlocked::read);
 
@@ -132,7 +133,7 @@ public final class RobloxifyPayloads {
 
 	/** Obby (Experience) HUD state. */
 	public record Obby(boolean active, int checkpoint, int total, long elapsedMillis, boolean completed) implements CustomPacketPayload {
-		public static final Type<Obby> TYPE = CustomPacketPayload.createType("robloxify:obby");
+		public static final Type<Obby> TYPE = new CustomPacketPayload.Type<>(Robloxify.id("obby"));
 		public static final StreamCodec<RegistryFriendlyByteBuf, Obby> CODEC =
 				CustomPacketPayload.codec(Obby::write, Obby::read);
 
@@ -156,7 +157,7 @@ public final class RobloxifyPayloads {
 
 	/** Generic client to server action, used by the Roblox UI. */
 	public record Action(String action, String arg) implements CustomPacketPayload {
-		public static final Type<Action> TYPE = CustomPacketPayload.createType("robloxify:action");
+		public static final Type<Action> TYPE = new CustomPacketPayload.Type<>(Robloxify.id("action"));
 		public static final StreamCodec<RegistryFriendlyByteBuf, Action> CODEC =
 				CustomPacketPayload.codec(Action::write, Action::read);
 

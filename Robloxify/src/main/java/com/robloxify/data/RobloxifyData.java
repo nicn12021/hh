@@ -82,7 +82,10 @@ public final class RobloxifyData {
 
 	public synchronized void write() {
 		try {
-			Files.createDirectories(file.getParent());
+			Path parent = file.toAbsolutePath().getParent();
+			if (parent != null) {
+				Files.createDirectories(parent);
+			}
 			DataFile data = new DataFile();
 			data.players = players;
 			Files.writeString(file, GSON.toJson(data), StandardCharsets.UTF_8);
