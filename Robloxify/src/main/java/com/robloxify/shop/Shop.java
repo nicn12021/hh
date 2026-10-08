@@ -8,8 +8,8 @@ import java.util.List;
 public final class Shop {
 	public static final ShopItem SPARKLE_TRAIL = new ShopItem("sparkle_trail", "Sparkle Trail",
 			"A trail of sparkles follows you around.", 150);
-	public static final ShopItem CLASSIC_HEAD = new ShopItem("classic_head", "Classic Gold Head",
-			"Give your blocky head a golden shine.", 250);
+	public static final ShopItem SHADES = new ShopItem("shades", "Cool Shades",
+			"A pair of blocky shades for your avatar.", 250);
 	public static final ShopItem BUILDER_CAP = new ShopItem("builder_cap", "Builder Cap",
 			"A trusty yellow cap for your avatar.", 300);
 	public static final ShopItem OOF_PACK = new ShopItem("oof_pack", "OOF Pack",
@@ -17,7 +17,7 @@ public final class Shop {
 	public static final ShopItem GOLD_STUDS = new ShopItem("gold_studs", "Gold Studs",
 			"Placing a stud showers it in gold particles.", 750);
 
-	public static final List<ShopItem> ALL = List.of(SPARKLE_TRAIL, CLASSIC_HEAD, BUILDER_CAP, OOF_PACK, GOLD_STUDS);
+	public static final List<ShopItem> ALL = List.of(SPARKLE_TRAIL, SHADES, BUILDER_CAP, OOF_PACK, GOLD_STUDS);
 
 	private Shop() {
 	}
