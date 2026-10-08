@@ -19,6 +19,13 @@ public final class RobloxifySounds {
 	public static final SoundEvent EXPERIENCE_COMPLETE = register("experience_complete");
 	public static final SoundEvent AVATAR_SWITCH = register("avatar_switch");
 	public static final SoundEvent OOF = register("oof");
+	public static final SoundEvent BOUNCE = register("bounce");
+	public static final SoundEvent UI_HOVER = register("ui_hover");
+	public static final SoundEvent EXPERIENCE_START = register("experience_start");
+	public static final SoundEvent AVATAR_EQUIP = register("avatar_equip");
+	public static final SoundEvent LEVEL_UP = register("level_up");
+	public static final SoundEvent RESPAWN = register("respawn");
+	public static final SoundEvent FAIL = register("fail");
 
 	private RobloxifySounds() {
 	}

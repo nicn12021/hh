@@ -1,15 +1,20 @@
 package com.robloxify.client.ui;
 
+import com.robloxify.client.ClientRobloxState;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/** Base class for every Robloxify screen: dark backdrop, header bar and tab buttons. */
+/** Base class for every Robloxify screen: backdrop, header bar and left navigation rail. */
 public abstract class RobloxScreen extends Screen {
 	protected static final int HEADER_HEIGHT = 28;
-	protected static final int TAB_WIDTH = 72;
-	protected static final int TAB_HEIGHT = 18;
+	protected static final int SIDEBAR_X = 6;
+	protected static final int SIDEBAR_Y = 38;
+	protected static final int SIDEBAR_WIDTH = 88;
+	protected static final int NAV_HEIGHT = 20;
+	protected static final int NAV_GAP = 3;
+	protected static final int CONTENT_X = SIDEBAR_X + SIDEBAR_WIDTH + 10;
+	protected static final int CONTENT_Y = 38;
 
 	protected RobloxScreen(Component title) {
 		super(title);
@@ -18,21 +23,21 @@ public abstract class RobloxScreen extends Screen {
 	@Override
 	protected void init() {
 		super.init();
-		int x = 4;
+		int y = SIDEBAR_Y;
 		for (RobloxTab tab : RobloxTab.values()) {
 			if (tab == currentTab()) {
-				x += TAB_WIDTH + 2;
+				y += NAV_HEIGHT + NAV_GAP;
 				continue;
 			}
 			RobloxTab target = tab;
-			addRenderableWidget(Button.builder(Component.literal(tab.label()), button -> openTab(target))
-					.bounds(x, HEADER_HEIGHT - TAB_HEIGHT - 3, TAB_WIDTH, TAB_HEIGHT)
-					.build());
-			x += TAB_WIDTH + 2;
+			addRenderableWidget(new RobloxButton(SIDEBAR_X, y, SIDEBAR_WIDTH, NAV_HEIGHT,
+					Component.literal(tab.icon() + "  " + tab.label()), () -> open(target))
+					.leftAligned().accent(RobloxTheme.ACCENT));
+			y += NAV_HEIGHT + NAV_GAP;
 		}
 	}
 
-	protected void openTab(RobloxTab tab) {
+	protected void open(RobloxTab tab) {
 		Screen screen = tab.create();
 		if (screen != null) {
 			this.minecraft.gui.setScreen(screen);
@@ -41,32 +46,32 @@ public abstract class RobloxScreen extends Screen {
 
 	protected abstract RobloxTab currentTab();
 
+	protected int contentWidth() {
+		return this.width - CONTENT_X - 10;
+	}
+
 	@Override
 	public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-		graphics.fill(0, 0, this.width, this.height, RobloxTheme.BACKDROP);
+		graphics.fill(0, 0, this.width, this.height, RobloxTheme.BACKDROP_TOP);
+		graphics.fill(0, this.height / 2, this.width, this.height, RobloxTheme.BACKDROP_BOTTOM);
 	}
 
 	@Override
 	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
-		// Panel behind the widgets.
-		graphics.fill(4, HEADER_HEIGHT + 2, this.width - 4, this.height - 4, RobloxTheme.PANEL);
+		int navHeight = RobloxTab.values().length * (NAV_HEIGHT + NAV_GAP);
+		RobloxUi.panel(graphics, SIDEBAR_X, SIDEBAR_Y, SIDEBAR_WIDTH, navHeight, RobloxTheme.SIDEBAR);
+
+		int activeY = SIDEBAR_Y + currentTab().ordinal() * (NAV_HEIGHT + NAV_GAP);
+		graphics.fill(SIDEBAR_X, activeY, SIDEBAR_X + 3, activeY + NAV_HEIGHT, RobloxTheme.ACCENT);
+		graphics.text(this.font, currentTab().icon() + "  " + currentTab().label(),
+				SIDEBAR_X + 11, activeY + 6, RobloxTheme.ACCENT_LIGHT);
+
 		graphics.fill(0, 0, this.width, HEADER_HEIGHT, RobloxTheme.HEADER);
 		graphics.fill(0, HEADER_HEIGHT - 2, this.width, HEADER_HEIGHT, RobloxTheme.ACCENT);
-		graphics.text(this.font, this.title, 8, 8, RobloxTheme.TEXT);
-		graphics.text(this.font, "\u25C8 " + com.robloxify.client.ClientRobloxState.formatNumber(
-				com.robloxify.client.ClientRobloxState.robux()), this.width - 90, 8, RobloxTheme.GOLD);
+		graphics.text(this.font, "ROBLOXIFY", 10, 10, RobloxTheme.TEXT);
+		graphics.text(this.font, "/ " + this.title.getString(), 82, 10, RobloxTheme.TEXT_DIM);
+		RobloxUi.robuxChip(graphics, this.font, this.width - 8, 7, ClientRobloxState.robux());
 
 		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-
-		// Highlight the active tab on top of the widgets.
-		int x = 4;
-		for (RobloxTab tab : RobloxTab.values()) {
-			if (tab == currentTab()) {
-				int y = HEADER_HEIGHT - TAB_HEIGHT - 3;
-				graphics.fill(x, y, x + TAB_WIDTH, y + TAB_HEIGHT, RobloxTheme.ACCENT_DARK);
-				graphics.centeredText(this.font, tab.label(), x + TAB_WIDTH / 2, y + 5, RobloxTheme.TEXT);
-			}
-			x += TAB_WIDTH + 2;
-		}
 	}
 }

@@ -1,7 +1,7 @@
 package com.robloxify.client;
 
 import com.robloxify.Robloxify;
-import com.robloxify.client.ui.RobloxMainScreen;
+import com.robloxify.client.ui.RobloxHomeScreen;
 import com.robloxify.config.RobloxifyConfig;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.KeyMapping;
@@ -33,7 +33,7 @@ public final class RobloxifyKeybinds {
 		while (openMenu.consumeClick()) {
 			if (client.gui.screen() == null && client.player != null && RobloxifyConfig.get().robloxUi) {
 				ClientSounds.play(com.robloxify.sound.RobloxifySounds.UI_OPEN, 1.0F);
-				client.gui.setScreen(new RobloxMainScreen());
+				client.gui.setScreen(new RobloxHomeScreen());
 			}
 		}
 		while (toggleAvatar.consumeClick()) {

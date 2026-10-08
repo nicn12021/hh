@@ -51,7 +51,11 @@ public final class RobloxifyData {
 		Profile profile = players.computeIfAbsent(uuid.toString(), key -> new Profile());
 		if (profile.robux == Profile.UNINITIALISED) {
 			profile.robux = Math.max(0, RobloxifyConfig.get().startingRobux);
+			profile.grantStartingItems();
 			dirty = true;
+		}
+		if (profile.appearance == null) {
+			profile.appearance = new com.robloxify.avatar.AvatarAppearance();
 		}
 		return profile;
 	}

@@ -30,6 +30,11 @@ public final class RobloxifyConfig {
 	public boolean emotes = true;
 	public boolean robloxUi = true;
 	public boolean easterEggs = true;
+	public boolean avatarAnimations = true;
+	public boolean robloxPhysics = true;
+	public boolean notifications = true;
+	public boolean showRobux = true;
+	public boolean showBadges = true;
 
 	// ---- Values ----------------------------------------------------------
 	public int startingRobux = 1250;
@@ -86,6 +91,11 @@ public final class RobloxifyConfig {
 		map.put("emotes", emotes);
 		map.put("roblox_ui", robloxUi);
 		map.put("easter_eggs", easterEggs);
+		map.put("avatar_animations", avatarAnimations);
+		map.put("roblox_physics", robloxPhysics);
+		map.put("notifications", notifications);
+		map.put("show_robux", showRobux);
+		map.put("show_badges", showBadges);
 		return map;
 	}
 
@@ -100,6 +110,11 @@ public final class RobloxifyConfig {
 			case "emotes" -> emotes = value;
 			case "roblox_ui" -> robloxUi = value;
 			case "easter_eggs" -> easterEggs = value;
+			case "avatar_animations" -> avatarAnimations = value;
+			case "roblox_physics" -> robloxPhysics = value;
+			case "notifications" -> notifications = value;
+			case "show_robux" -> showRobux = value;
+			case "show_badges" -> showBadges = value;
 			default -> {
 				return false;
 			}

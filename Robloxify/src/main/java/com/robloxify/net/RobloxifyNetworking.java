@@ -14,10 +14,10 @@ public final class RobloxifyNetworking {
 
 	public static void registerPayloads() {
 		PayloadTypeRegistry.clientboundPlay().register(RobloxifyPayloads.Profile.TYPE, RobloxifyPayloads.Profile.CODEC);
-		PayloadTypeRegistry.clientboundPlay().register(RobloxifyPayloads.Avatar.TYPE, RobloxifyPayloads.Avatar.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RobloxifyPayloads.Appearance.TYPE, RobloxifyPayloads.Appearance.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RobloxifyPayloads.Notification.TYPE, RobloxifyPayloads.Notification.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(RobloxifyPayloads.Emote.TYPE, RobloxifyPayloads.Emote.CODEC);
-		PayloadTypeRegistry.clientboundPlay().register(RobloxifyPayloads.BadgeUnlocked.TYPE, RobloxifyPayloads.BadgeUnlocked.CODEC);
-		PayloadTypeRegistry.clientboundPlay().register(RobloxifyPayloads.Obby.TYPE, RobloxifyPayloads.Obby.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(RobloxifyPayloads.Experience.TYPE, RobloxifyPayloads.Experience.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(RobloxifyPayloads.Action.TYPE, RobloxifyPayloads.Action.CODEC);
 
 		ServerPlayNetworking.registerGlobalReceiver(RobloxifyPayloads.Action.TYPE, (payload, context) ->
@@ -31,6 +31,9 @@ public final class RobloxifyNetworking {
 	}
 
 	public static void broadcast(MinecraftServer server, CustomPacketPayload payload) {
+		if (server == null) {
+			return;
+		}
 		for (ServerPlayer player : server.getPlayerList().getPlayers()) {
 			sendTo(player, payload);
 		}

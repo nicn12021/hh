@@ -1,6 +1,8 @@
 package com.robloxify.client;
 
+import com.robloxify.avatar.AvatarAppearance;
 import com.robloxify.config.RobloxifyConfig;
+import com.robloxify.experience.ExperienceType;
 import com.robloxify.net.RobloxifyPayloads;
 import com.robloxify.util.Emotes;
 import net.minecraft.client.Minecraft;
@@ -12,7 +14,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -24,23 +25,24 @@ public final class ClientRobloxState {
 	private static int blocksPlaced;
 	private static boolean selfAvatar;
 	private static int obbiesCompleted;
+	private static int experiencesPlayed;
 	private static long obbyBestMillis;
 	private static final Map<String, Long> BADGES = new LinkedHashMap<>();
 	private static final List<String> OWNED = new ArrayList<>();
+	private static final AvatarAppearance SELF_APPEARANCE = new AvatarAppearance();
+
 	private static final Set<UUID> ROBLOX_PLAYERS = new HashSet<>();
+	private static final Map<UUID, AvatarAppearance> APPEARANCES = new HashMap<>();
 	private static final Map<UUID, String> EMOTES = new HashMap<>();
 	private static final Map<UUID, Integer> EMOTE_TICKS = new HashMap<>();
 
-	private static boolean obbyActive;
-	private static int obbyCheckpoint;
-	private static int obbyTotal;
-	private static long obbyElapsedMillis;
-	private static long obbySyncedAt;
-
-	private static String bannerTitle = "";
-	private static String bannerSubtitle = "";
-	private static int bannerTicks;
-	private static int bannerColor = 0xFFFFC64A;
+	private static boolean experienceActive;
+	private static ExperienceType experienceType;
+	private static int checkpoint;
+	private static int checkpointTotal;
+	private static long elapsedMillis;
+	private static long syncedAt;
+	private static String objective = "";
 
 	private ClientRobloxState() {
 	}
@@ -53,19 +55,36 @@ public final class ClientRobloxState {
 		blocksPlaced = payload.blocksPlaced();
 		selfAvatar = payload.robloxAvatar();
 		obbiesCompleted = payload.obbiesCompleted();
+		experiencesPlayed = payload.experiencesPlayed();
 		obbyBestMillis = payload.obbyBestMillis();
 		BADGES.clear();
 		BADGES.putAll(payload.badges());
 		OWNED.clear();
 		OWNED.addAll(payload.owned());
+		copyInto(SELF_APPEARANCE, payload.appearance());
 	}
 
-	public static void setAvatar(UUID player, boolean roblox) {
-		if (roblox) {
-			ROBLOX_PLAYERS.add(player);
-		} else {
-			ROBLOX_PLAYERS.remove(player);
+	private static void copyInto(AvatarAppearance target, AvatarAppearance source) {
+		if (source == null) {
+			return;
 		}
+		target.face = source.face;
+		target.shirt = source.shirt;
+		target.pants = source.pants;
+		target.hat = source.hat;
+		target.accessory = source.accessory;
+		target.effect = source.effect;
+		target.animation = source.animation;
+	}
+
+	public static void applyAppearance(RobloxifyPayloads.Appearance payload) {
+		if (payload.roblox()) {
+			ROBLOX_PLAYERS.add(payload.player());
+		} else {
+			ROBLOX_PLAYERS.remove(payload.player());
+		}
+		AvatarAppearance appearance = APPEARANCES.computeIfAbsent(payload.player(), key -> new AvatarAppearance());
+		copyInto(appearance, payload.appearance());
 	}
 
 	public static void playEmote(UUID player, String emote) {
@@ -73,30 +92,14 @@ public final class ClientRobloxState {
 		EMOTE_TICKS.put(player, Emotes.duration(emote));
 	}
 
-	public static void onBadgeUnlocked(String badgeId, int reward) {
-		var badge = com.robloxify.badge.Badges.byId(badgeId);
-		String name = badge != null ? badge.icon() + " " + badge.name() : badgeId;
-		String description = badge != null ? badge.description() : "";
-		showBanner("Badge unlocked: " + name, description + "   +" + reward + " Robux", 0xFFFFC64A);
-		ClientSounds.play(com.robloxify.sound.RobloxifySounds.BADGE_UNLOCK, 1.0F);
-	}
-
-	public static void applyObby(RobloxifyPayloads.Obby payload) {
-		obbyActive = payload.active();
-		obbyCheckpoint = payload.checkpoint();
-		obbyTotal = payload.total();
-		obbyElapsedMillis = payload.elapsedMillis();
-		obbySyncedAt = System.currentTimeMillis();
-		if (payload.completed()) {
-			showBanner("Experience complete!", "Obby finished in " + (payload.elapsedMillis() / 1000.0) + "s", 0xFF7CFC00);
-		}
-	}
-
-	public static void showBanner(String title, String subtitle, int color) {
-		bannerTitle = title;
-		bannerSubtitle = subtitle;
-		bannerColor = color;
-		bannerTicks = 100;
+	public static void applyExperience(RobloxifyPayloads.Experience payload) {
+		experienceActive = payload.active();
+		experienceType = ExperienceType.byId(payload.experienceId());
+		checkpoint = payload.checkpoint();
+		checkpointTotal = payload.total();
+		elapsedMillis = payload.elapsedMillis();
+		objective = payload.objective();
+		syncedAt = System.currentTimeMillis();
 	}
 
 	/** Called once per client tick. */
@@ -108,15 +111,36 @@ public final class ClientRobloxState {
 			}
 			EMOTES.keySet().removeIf(uuid -> !EMOTE_TICKS.containsKey(uuid));
 		}
-		if (bannerTicks > 0) {
-			bannerTicks--;
-		}
 	}
 
 	// ---- Queries ---------------------------------------------------------
 
-	public static boolean isRobloxPlayer(UUID uuid) {
-		return ROBLOX_PLAYERS.contains(uuid);
+	public static Entity entityFor(int entityId) {
+		Minecraft client = Minecraft.getInstance();
+		return client.level == null ? null : client.level.getEntity(entityId);
+	}
+
+	public static boolean isRobloxEntity(int entityId) {
+		Entity entity = entityFor(entityId);
+		if (entity == null) {
+			return false;
+		}
+		if (entity instanceof Mannequin) {
+			return RobloxifyConfig.get().easterEggs;
+		}
+		return ROBLOX_PLAYERS.contains(entity.getUUID());
+	}
+
+	/** The appearance to draw for an entity, or null when it is a plain Minecraft player. */
+	public static AvatarAppearance appearanceFor(int entityId) {
+		Entity entity = entityFor(entityId);
+		if (entity == null || !isRobloxEntity(entityId)) {
+			return null;
+		}
+		if (entity == Minecraft.getInstance().player) {
+			return SELF_APPEARANCE;
+		}
+		return APPEARANCES.getOrDefault(entity.getUUID(), SELF_APPEARANCE);
 	}
 
 	public static String emoteOf(UUID uuid) {
@@ -128,28 +152,8 @@ public final class ClientRobloxState {
 		if (left == null) {
 			return 0.0F;
 		}
-		String emote = EMOTES.get(uuid);
-		int total = Math.max(1, Emotes.duration(emote));
+		int total = Math.max(1, Emotes.duration(EMOTES.get(uuid)));
 		return 1.0F - (left / (float) total);
-	}
-
-
-	/** Looks up an entity by its network id in the current client level. */
-	public static Entity entityFor(int entityId) {
-		Minecraft client = Minecraft.getInstance();
-		return client.level == null ? null : client.level.getEntity(entityId);
-	}
-
-	/** True when this entity should be drawn with the blocky Roblox avatar. */
-	public static boolean isRobloxEntity(int entityId) {
-		Entity entity = entityFor(entityId);
-		if (entity == null) {
-			return false;
-		}
-		if (entity instanceof Mannequin) {
-			return RobloxifyConfig.get().easterEggs;
-		}
-		return ROBLOX_PLAYERS.contains(entity.getUUID());
 	}
 
 	public static int robux() {
@@ -172,6 +176,10 @@ public final class ClientRobloxState {
 		return obbiesCompleted;
 	}
 
+	public static int experiencesPlayed() {
+		return experiencesPlayed;
+	}
+
 	public static long obbyBestMillis() {
 		return obbyBestMillis;
 	}
@@ -188,39 +196,31 @@ public final class ClientRobloxState {
 		return OWNED.contains(id);
 	}
 
-	public static boolean obbyActive() {
-		return obbyActive;
+	public static AvatarAppearance selfAppearance() {
+		return SELF_APPEARANCE;
 	}
 
-	public static int obbyCheckpoint() {
-		return obbyCheckpoint;
+	public static boolean experienceActive() {
+		return experienceActive;
 	}
 
-	public static int obbyTotal() {
-		return obbyTotal;
+	public static ExperienceType experienceType() {
+		return experienceType;
 	}
 
-	public static long obbyElapsedMillis() {
-		return obbyActive ? obbyElapsedMillis + (System.currentTimeMillis() - obbySyncedAt) : obbyElapsedMillis;
+	public static int checkpoint() {
+		return checkpoint;
 	}
 
-	public static boolean hasBanner() {
-		return bannerTicks > 0;
+	public static int checkpointTotal() {
+		return checkpointTotal;
 	}
 
-	public static String bannerTitle() {
-		return bannerTitle;
+	public static long elapsedMillis() {
+		return experienceActive ? elapsedMillis + (System.currentTimeMillis() - syncedAt) : elapsedMillis;
 	}
 
-	public static String bannerSubtitle() {
-		return bannerSubtitle;
-	}
-
-	public static int bannerColor() {
-		return bannerColor;
-	}
-
-	public static String formatNumber(long value) {
-		return String.format(Locale.US, "%,d", value);
+	public static String objective() {
+		return objective;
 	}
 }

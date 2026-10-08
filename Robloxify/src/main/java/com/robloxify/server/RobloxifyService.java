@@ -1,15 +1,18 @@
 package com.robloxify.server;
 
+import com.robloxify.avatar.AvatarAppearance;
+import com.robloxify.avatar.Cosmetic;
+import com.robloxify.avatar.CosmeticCatalog;
+import com.robloxify.avatar.CosmeticCategory;
 import com.robloxify.badge.Badge;
 import com.robloxify.badge.Badges;
 import com.robloxify.config.RobloxifyConfig;
 import com.robloxify.data.Profile;
 import com.robloxify.data.RobloxifyData;
-import com.robloxify.experience.ObbyManager;
+import com.robloxify.experience.ExperienceManager;
+import com.robloxify.experience.ExperienceType;
 import com.robloxify.net.RobloxifyNetworking;
 import com.robloxify.net.RobloxifyPayloads;
-import com.robloxify.shop.Shop;
-import com.robloxify.shop.ShopItem;
 import com.robloxify.sound.RobloxifySounds;
 import com.robloxify.util.Emotes;
 import net.minecraft.ChatFormatting;
@@ -24,6 +27,10 @@ import java.util.LinkedHashMap;
 
 /** All authoritative Robloxify logic. Everything here runs on the logical server. */
 public final class RobloxifyService {
+	public static final int EXPERIENCES_FOR_EXPLORER = 3;
+	public static final int ITEMS_FOR_COLLECTOR = 8;
+	public static final int ROBUX_FOR_MILLIONAIRE = 10_000;
+
 	private RobloxifyService() {
 	}
 
@@ -35,8 +42,23 @@ public final class RobloxifyService {
 		Profile profile = profile(player);
 		RobloxifyNetworking.sendTo(player, new RobloxifyPayloads.Profile(
 				profile.robux, profile.blocksMined, profile.blocksPlaced, profile.robloxAvatar,
-				profile.obbiesCompleted, profile.obbyBestMillis,
-				new LinkedHashMap<>(profile.badges), new ArrayList<>(profile.owned)));
+				profile.obbiesCompleted, profile.experiencesPlayed, profile.obbyBestMillis,
+				new LinkedHashMap<>(profile.badges), new ArrayList<>(profile.owned),
+				profile.appearance.copy()));
+	}
+
+	/** Pushes this player's look to everybody, including themselves. */
+	public static void broadcastAppearance(ServerPlayer player) {
+		Profile profile = profile(player);
+		RobloxifyNetworking.broadcast(player.level().getServer(), new RobloxifyPayloads.Appearance(
+				player.getUUID(), profile.robloxAvatar, profile.appearance.copy()));
+	}
+
+	public static void notify(ServerPlayer player, String kind, String title, String subtitle, int robux) {
+		if (!RobloxifyConfig.get().notifications) {
+			return;
+		}
+		RobloxifyNetworking.sendTo(player, new RobloxifyPayloads.Notification(kind, title, subtitle, robux));
 	}
 
 	public static void play(ServerPlayer player, SoundEvent sound) {
@@ -50,6 +72,8 @@ public final class RobloxifyService {
 		player.level().playSound(null, player.blockPosition(), sound, SoundSource.PLAYERS, 0.7F, pitch);
 	}
 
+	// ---------------------------------------------------------------- badges
+
 	public static void grantBadge(ServerPlayer player, Badge badge) {
 		if (!RobloxifyConfig.get().badges) {
 			return;
@@ -60,21 +84,41 @@ public final class RobloxifyService {
 		}
 		profile.robux += badge.reward();
 		RobloxifyData.get().markDirty();
-		RobloxifyNetworking.sendTo(player, new RobloxifyPayloads.BadgeUnlocked(badge.id(), badge.reward()));
+		notify(player, "badge", "Badge Awarded!", badge.icon() + "  " + badge.name(), badge.reward());
+		play(player, RobloxifySounds.BADGE_UNLOCK);
 		player.sendSystemMessage(Component.literal("[Robloxify] ").withStyle(ChatFormatting.GRAY)
 				.append(Component.literal(badge.icon() + " " + badge.name()).withStyle(ChatFormatting.GOLD))
-				.append(Component.literal(" unlocked  +" + badge.reward() + " Robux").withStyle(ChatFormatting.GREEN)));
-		play(player, RobloxifySounds.BADGE_UNLOCK);
+				.append(Component.literal("  +" + badge.reward() + " Robux").withStyle(ChatFormatting.GREEN)));
 		syncProfile(player);
+		checkWealthBadges(player);
 	}
+
+	public static void checkWealthBadges(ServerPlayer player) {
+		Profile profile = profile(player);
+		if (profile.robux >= ROBUX_FOR_MILLIONAIRE) {
+			grantBadge(player, Badges.MILLIONAIRE);
+		}
+		if (profile.owned.size() >= ITEMS_FOR_COLLECTOR) {
+			grantBadge(player, Badges.AVATAR_COLLECTOR);
+		}
+	}
+
+	public static void checkExplorerBadge(ServerPlayer player) {
+		if (profile(player).completedExperiences.size() >= EXPERIENCES_FOR_EXPLORER) {
+			grantBadge(player, Badges.EXPLORER);
+		}
+	}
+
+	// ----------------------------------------------------------------- robux
 
 	public static void addRobux(ServerPlayer player, int amount) {
 		Profile profile = profile(player);
 		profile.robux = Math.max(0, profile.robux + amount);
 		RobloxifyData.get().markDirty();
 		syncProfile(player);
-		player.sendSystemMessage(Component.literal("[Robloxify] " + (amount >= 0 ? "+" : "") + amount
-				+ " Robux (total " + profile.robux + ")").withStyle(ChatFormatting.YELLOW));
+		if (amount > 0) {
+			checkWealthBadges(player);
+		}
 	}
 
 	public static void setRobux(ServerPlayer player, int amount) {
@@ -82,13 +126,14 @@ public final class RobloxifyService {
 		profile.robux = Math.max(0, amount);
 		RobloxifyData.get().markDirty();
 		syncProfile(player);
-		player.sendSystemMessage(Component.literal("[Robloxify] Robux set to " + profile.robux).withStyle(ChatFormatting.YELLOW));
+		notify(player, "robux", "Balance updated", com.robloxify.util.Robux.format(profile.robux), 0);
 	}
+
+	// ---------------------------------------------------------------- avatar
 
 	public static void setAvatar(ServerPlayer player, boolean roblox) {
 		if (!RobloxifyConfig.get().robloxAvatar) {
-			player.sendSystemMessage(Component.literal("[Robloxify] The Roblox avatar is disabled in the config.")
-					.withStyle(ChatFormatting.RED));
+			notify(player, "fail", "Avatar disabled", "The Roblox avatar is off in Settings.", 0);
 			return;
 		}
 		Profile profile = profile(player);
@@ -97,15 +142,15 @@ public final class RobloxifyService {
 		}
 		profile.robloxAvatar = roblox;
 		RobloxifyData.get().markDirty();
-		RobloxifyNetworking.broadcast(player.level().getServer(), new RobloxifyPayloads.Avatar(player.getUUID(), roblox));
+		broadcastAppearance(player);
 		play(player, RobloxifySounds.AVATAR_SWITCH);
+		notify(player, "avatar", roblox ? "Roblox avatar on" : "Minecraft player",
+				roblox ? "Looking blocky." : "Back to vanilla.", 0);
 		if (roblox) {
 			grantBadge(player, Badges.ROBLOXIAN);
 		}
 		checkEnderRobloxian(player);
 		syncProfile(player);
-		player.sendSystemMessage(Component.literal("[Robloxify] Avatar: " + (roblox ? "Roblox" : "Minecraft"))
-				.withStyle(ChatFormatting.AQUA));
 	}
 
 	public static void checkEnderRobloxian(ServerPlayer player) {
@@ -114,45 +159,100 @@ public final class RobloxifyService {
 		}
 	}
 
+	/** Equips an owned cosmetic into its slot. */
+	public static void equip(ServerPlayer player, String cosmeticId) {
+		Cosmetic cosmetic = CosmeticCatalog.byId(cosmeticId);
+		if (cosmetic == null) {
+			return;
+		}
+		Profile profile = profile(player);
+		if (!profile.owns(cosmeticId)) {
+			notify(player, "fail", "Not owned", "Buy " + cosmetic.name() + " in the Shop first.", 0);
+			return;
+		}
+		AvatarAppearance appearance = profile.appearance;
+		if (cosmetic.id().equals(appearance.slot(cosmetic.category()))) {
+			// Clicking the equipped item takes it off (except for body slots that must keep a value).
+			if (cosmetic.category() != CosmeticCategory.FACE && cosmetic.category() != CosmeticCategory.SHIRT
+					&& cosmetic.category() != CosmeticCategory.PANTS && cosmetic.category() != CosmeticCategory.ANIMATION) {
+				appearance.set(cosmetic.category(), CosmeticCatalog.NONE);
+			}
+		} else {
+			appearance.set(cosmetic.category(), cosmetic.id());
+		}
+		RobloxifyData.get().markDirty();
+		broadcastAppearance(player);
+		play(player, RobloxifySounds.AVATAR_EQUIP);
+		syncProfile(player);
+	}
+
+	public static void buy(ServerPlayer player, String cosmeticId) {
+		Cosmetic cosmetic = CosmeticCatalog.byId(cosmeticId);
+		if (cosmetic == null) {
+			return;
+		}
+		Profile profile = profile(player);
+		if (profile.owns(cosmeticId)) {
+			notify(player, "info", "Already owned", cosmetic.name(), 0);
+			return;
+		}
+		if (profile.robux < cosmetic.price()) {
+			play(player, RobloxifySounds.FAIL, 1.2F);
+			notify(player, "fail", "Not enough Robux",
+					cosmetic.name() + " costs " + com.robloxify.util.Robux.format(cosmetic.price()), 0);
+			return;
+		}
+		profile.robux -= cosmetic.price();
+		profile.owned.add(cosmetic.id());
+		RobloxifyData.get().markDirty();
+		play(player, RobloxifySounds.PURCHASE);
+		notify(player, "purchase", "New Avatar Item!", cosmetic.name(), 0);
+		syncProfile(player);
+		checkWealthBadges(player);
+	}
+
+	// -------------------------------------------------------------- experiences
+
+	public static void startExperience(ServerPlayer player, String experienceId) {
+		ExperienceType type = ExperienceType.byId(experienceId);
+		if (type == null) {
+			notify(player, "fail", "Unknown Experience", experienceId, 0);
+			return;
+		}
+		if (type == ExperienceType.OBBY) {
+			grantBadge(player, Badges.OBBY_BEGINNER);
+		}
+		ExperienceManager.start(player, type);
+	}
+
+	public static void onExperienceCompleted(ServerPlayer player, ExperienceType type, long elapsedMillis) {
+		Profile profile = profile(player);
+		if (!profile.completedExperiences.contains(type.id())) {
+			profile.completedExperiences.add(type.id());
+			RobloxifyData.get().markDirty();
+		}
+		grantBadge(player, Badges.FIRST_EXPERIENCE);
+		checkExplorerBadge(player);
+		if (type == ExperienceType.OBBY && elapsedMillis > 0 && elapsedMillis < 60_000L) {
+			grantBadge(player, Badges.SPEEDRUNNER);
+		}
+	}
+
+	// ------------------------------------------------------------------ actions
+
 	public static void handleAction(ServerPlayer player, String action, String arg) {
 		switch (action) {
 			case "avatar_toggle" -> setAvatar(player, !profile(player).robloxAvatar);
 			case "avatar_on" -> setAvatar(player, true);
 			case "avatar_off" -> setAvatar(player, false);
 			case "buy" -> buy(player, arg);
+			case "equip" -> equip(player, arg);
 			case "emote" -> emote(player, arg);
-			case "obby_start" -> ObbyManager.start(player);
-			case "obby_stop" -> ObbyManager.stop(player, false);
+			case "experience_start" -> startExperience(player, arg);
+			case "experience_stop" -> ExperienceManager.stop(player, false);
 			default -> {
 			}
 		}
-	}
-
-	public static void buy(ServerPlayer player, String id) {
-		ShopItem item = Shop.byId(id);
-		if (item == null) {
-			return;
-		}
-		Profile profile = profile(player);
-		if (profile.owned.contains(item.id())) {
-			player.sendSystemMessage(Component.literal("[Robloxify] You already own " + item.name() + ".")
-					.withStyle(ChatFormatting.GRAY));
-			return;
-		}
-		if (profile.robux < item.price()) {
-			play(player, RobloxifySounds.OOF, 1.4F);
-			player.sendSystemMessage(Component.literal("[Robloxify] Not enough Robux for " + item.name()
-					+ " (" + item.price() + ").").withStyle(ChatFormatting.RED));
-			return;
-		}
-		profile.robux -= item.price();
-		profile.owned.add(item.id());
-		RobloxifyData.get().markDirty();
-		play(player, RobloxifySounds.PURCHASE);
-		syncProfile(player);
-		player.sendSystemMessage(Component.literal("[Robloxify] Purchased ").withStyle(ChatFormatting.GRAY)
-				.append(Component.literal(item.name()).withStyle(ChatFormatting.GOLD))
-				.append(Component.literal(" for " + item.price() + " Robux.").withStyle(ChatFormatting.GREEN)));
 	}
 
 	public static void emote(ServerPlayer player, String name) {
@@ -161,7 +261,7 @@ public final class RobloxifyService {
 		}
 		String emote = Emotes.normalise(name);
 		if (!Emotes.isValid(emote)) {
-			player.sendSystemMessage(Component.literal("[Robloxify] Unknown emote: " + name).withStyle(ChatFormatting.RED));
+			notify(player, "fail", "Unknown emote", name, 0);
 			return;
 		}
 		RobloxifyNetworking.broadcast(player.level().getServer(), new RobloxifyPayloads.Emote(player.getUUID(), emote));
